@@ -1,4 +1,5 @@
 #include "headers/gecode_problem.hpp"
+#include "headers/utilities.hpp"
 
 /***********************************************************************************************************************
  *                                          Problem class methods                                                      *
@@ -8,29 +9,45 @@
  * Constructor
  * @param cantus_firmus Contains the MIDI values of the cantus firmus
  */
-Problem::Problem (int** cantus_firmus) {
+Problem::Problem (int** cantus_firmus, int nMeasures) {
     string message = "WSpace object created. ";
-    size = 11*4;                    // tmp for init cantus firmus
-    lower_bound_domain = 0;
-    upper_bound_domain = 100;
-    if (cantus_firmus == nullptr) {
-        std::cout << "null pointer" << std::endl;
-    }
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 11; ++j) {
-            std::cout << cantus_firmus[i][j] << " ";
-        }
-        std::cout << std::endl;
-    }
+
+    /*************************************************************************************************************
+    *                                          INIT FOR ALL SPECIES                                             *
+    **************************************************************************************************************/
+    size = nMeasures*4;                                     // Only 4/4 is supported
+    MAX_NOTES_CP = 3*(nMeasures-1) + nMeasures;             // from p.12 //TODO useful? 
+
+    // BUILD SET OF VALUES FOR THE NOTES IN CP (see N, p.16)
+    vector<int> scale = scales[IONIAN];                             
+    vector<int> domain_vector = get_all_notes_from_scale(C, scale);        // for standard example in C major
+    // TODO : filter vector in given range -> best way is to give this range as arguments of get_all_notes_from_scale
+    lower_bound_domain = domain_vector.front();                            // minimum MIDI value for counterpoint
+    upper_bound_domain = domain_vector.back();                             // maximum MIDI value for counterpoint
+
+    
+    /*************************************************************************************************************
+    *                                          SPECIFIC TO SPECIES 1                                             *
+    **************************************************************************************************************/
+    // INITIALIZATION SPECIFIC TO SPECIES 1
+    int b = 1;                                              // from p.13, number of beats in a measure used by the solver
+    int d = 4/b;                                            // duration of a note, depending on chosen species
 
 
-    // variable initialization
-    vars = IntVarArray(*this, 44, 0, 100);
-    Matrix<IntVarArray> cp(vars, 11, 4);
+    /*************************************************************************************************************
+    *                                          INIT VARIABLES (CP)                                               *
+    **************************************************************************************************************/
+    IntSet domain(domain_vector.data(), domain_vector.size());                  // convert vector to IntSet
+    vars = IntVarArray(*this, size, domain);   
+    Matrix<IntVarArray> cp(vars, 11, 4);                                              
 
-    //constraints (temporary)
+    /*************************************************************************************************************
+    *                                               CONSTRAINTS                                                  *
+    **************************************************************************************************************/
+    //G4 : "The counterpoint must be in the same key as the cantus firmus"
+    distinct(*this, vars); // tmp
+    
 
-    distinct(*this, vars);
     //branching
     branch(*this, vars, INT_VAR_SIZE_MIN(), INT_VAL_MIN());
     writeToLogFile(message.c_str());
@@ -47,6 +64,7 @@ Problem::Problem(Problem& s): Space(s){
     size = s.size;
     lower_bound_domain = s.lower_bound_domain;
     upper_bound_domain = s.upper_bound_domain;
+    MAX_NOTES_CP = s.MAX_NOTES_CP;
     vars.update(*this, s.vars);
     // ERREUR BIZARRE CHECK ICI
 }
@@ -147,7 +165,7 @@ Search::Base<Problem>* make_solver(Problem* pb, int type){
     Gecode::Search::Options opts;
     /**@todo add here any options you want*/
 
-    if (type == bab_solver)
+    if (type == BAB_SOLVER)
         return new BAB<Problem>(pb, opts);
     else // default case
         return new DFS<Problem>(pb, opts);

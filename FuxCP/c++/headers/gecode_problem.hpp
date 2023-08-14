@@ -18,14 +18,13 @@
 #include "gecode/int.hh"
 #include "gecode/kernel.hh"
 
+
+#include "utilities.hpp"
+
 using namespace Gecode;
 using namespace Gecode::Search;
 using namespace std;
 
-enum {
-    dfs_solver, //0
-    bab_solver, //1
-};
 
 /*****************
  * Problem class *
@@ -38,14 +37,22 @@ protected:
     int size; // The size of the variable array of interest
     int lower_bound_domain;
     int upper_bound_domain;
-    /* @todo Add here any additional attributes you need to represent your problem */
+    int MAX_NOTES_CP;           // maximum amount of notes in counterpoint //TODO useful?
+
+    /*************************************************************************************
+     *
+     *                                  GLOBAL CONTSTANTS
+     *
+    **************************************************************************************/
+
+    
 
 public:
     /**
      * Constructor
      * @param cantus_firmus Contains the MIDI values of the cantus firmus
      */
-    Problem(int** cantus_firmus);
+    Problem(int** cantus_firmus, int nMeasures);
 
     /**
      * Copy constructor

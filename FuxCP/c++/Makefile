@@ -11,8 +11,8 @@ dylib: problem_wrapper.cpp
 
 
 run:
-	g++ -I/home/gecode-release-6.2.0/include -c gecode_problem.cpp main.cpp
-	g++ -o main -L/home/gecode-release-6.2.0/lib gecode_problem.o main.o -lgecodesearch -lgecodeminimodel -lgecodeint -lgecodekernel -lgecodesupport
+	g++ -I/home/gecode-release-6.2.0/include -c utilities.cpp gecode_problem.cpp main.cpp
+	g++ -o main -L/home/gecode-release-6.2.0/lib utilities.o gecode_problem.o main.o -lgecodesearch -lgecodeminimodel -lgecodeint -lgecodekernel -lgecodesupport
 	./main
 #remove temporary files and dynamic library files
 clean:
