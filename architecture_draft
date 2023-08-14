@@ -1,0 +1,67 @@
+ARCHITECTURE OF THE CODE
+
+FUXCP.lisp 
+	Used to send information from Lisp to Gecode.  Information to send is : 
+	- [int] Notes of the cantus firmus 
+	- [int] Preferences (chosen by composer in interface) + is c.f. below / in the middle / ...
+	- int   # of voices
+	- int species
+
+	Functions to write : 
+	- create_new_problem([int] cf, [int] preferences, int voices_number, int species)
+	- get_size()
+	- return_solution
+	- create_solver
+	- return_next_solution (with a difference percentage ?)
+	
+Problem_wrapper.cpp
+	Write all these funtions in c++ (problem specific)
+	
+Constants.cpp
+	File that contains all values that are constant for any problem & species
+	- Cons (ALL_CONS, P_CONS, IMP_CONS)
+	- All functions from subsection 2.2.4 (mathemacial functions)
+	
+VOICE object (separate file definition for clarity?)
+	Attributes : 
+	- [int] notes (same structure as Thibault)
+	- int len : number of measures in the voice object (ATTRIBUTE OF GET FUNCTION? SINCE COUNTERPOINT LENGTH MAY CHANGE FOR FLORAL SPECIES?)
+	- [int] cf-brut-m-intervals : list of size len-1 representing the melodic intervals between the consecutive notes of the voice
+	- bool iscounterpoint (straightforward)
+	- int lb / int ub / [int] cp-range (ONLY FOR COUNTERPOINT VOICES?) 
+	
+	
+Gecode_problem.spp / PROBLEM object
+	Attributes : 
+	- int sm (max number of notes contained in the counterpoint)
+	- [int] extended-cp-domain & [int] scale & [int] borrowed_scale (set of values available for the notes of the cp voices) -> maybe 2D tables for multiple voices
+	- Voice cantus_firmus
+	
+	Variables : 
+	H / M / P
+	ADDING H/M/P as attributes -> variables ok
+	
+	Functions : 
+	GETTERS : 
+	- [[int]] get-h-intervals(Voice cf, Voice cp) : list of harmonic intervals between to voices (O(4*len) -> should be ok)
+	- [[int]] get-h-intervals-abs(Voice cf, Voice cp) : same but without modulo 12
+	- [int] get m-intervals(Voice voice)
+	- <same for other M variables>
+	- [int] get_motion_P (Voice cf, Voice cp) : straightforward
+	- [int] isCfbelow : straightforward
+	- [int] is-cons : straightforward
+	
+	ALL CONSTRAINT METHODS, one method per constraint
+	
+	-return_solution, print_solution
+	
+	SEARCH ENGINE METHODS (make_solver, get_next_solution_space)
+	
+main.cpp
+	Same structure as the current main.cpp, should not be to complicate IMO.  creates new Voice instance for cf and then creates new problem isntance with the attribute as described above
+	
+
+
+DON'T KNOW WHERE TO PUT THESE : 
+	-borrow? (additional notes that the CP can have in relation to the tonic of the piece)
+	
