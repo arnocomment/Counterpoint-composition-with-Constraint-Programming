@@ -19,11 +19,23 @@ Problem::Problem (int** cantus_firmus, int nMeasures) {
     MAX_NOTES_CP = 3*(nMeasures-1) + nMeasures;             // from p.12 //TODO useful? 
 
     // BUILD SET OF VALUES FOR THE NOTES IN CP (see N, p.16)
-    vector<int> scale = scales[IONIAN];                             
-    vector<int> domain_vector = get_all_notes_from_scale(C, scale);        // for standard example in C major
+    vector<int> basic_scale = scales[IONIAN];                               // get intervals to build scale
+    vector<int> borrowed_scale = scales[BORROWED];                          // intervals for additional values depending on tonic (first node of cantus firmus)
+    vector<int> scale = get_all_notes_from_scale(C, basic_scale);           // all notes from C major (tmp)
+    vector<int> borrowed_notes = get_all_notes_from_scale(cantus_firmus[0][0] % 12, borrowed_scale);    // get all additional borrowed notes
+    
+
     // TODO : filter vector in given range -> best way is to give this range as arguments of get_all_notes_from_scale
-    lower_bound_domain = domain_vector.front();                            // minimum MIDI value for counterpoint
-    upper_bound_domain = domain_vector.back();                             // maximum MIDI value for counterpoint
+    set<int> merge_scales(scale.begin(), scale.end());                      // merge all notes together 
+    merge_scales.insert(borrowed_notes.begin(), borrowed_notes.end());      // and delete duplicates
+    vector<int> domain_vector(merge_scales.begin(), merge_scales.end());    // cast back to vector
+    
+    domain_vector.erase(remove_if(domain_vector.begin(), domain_vector.end(), [](int value) {
+        return value < 21;                                                  // remove all values below A0 (21)
+    }), domain_vector.end());
+
+    lower_bound_domain = domain_vector.front();                             // lowest possible note for cp
+    upper_bound_domain = domain_vector.back();                              // highest possible note for cp
 
     
     /*************************************************************************************************************
