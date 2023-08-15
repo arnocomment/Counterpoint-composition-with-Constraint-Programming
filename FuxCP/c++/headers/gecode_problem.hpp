@@ -33,9 +33,15 @@ using namespace std;
 class Problem: public Space {
 protected:
     // solution related attributes
-    IntVarArray vars;                        // CP    (notes of the counterpoint)
-    IntVarArray h_intervals_vars;            // H     (harmonic intervals between H and CP, modulo 12)
-    IntVarArray h_intervals_abs_vars;        // H_abs (harmonic intervals between H and CP)
+    IntVarArray vars;                       // CP     (notes of the counterpoint)
+    IntVarArray h_intervals_vars;           // H      (harmonic intervals between H and CP, modulo 12)
+    IntVarArray h_intervals_abs_vars;       // H_abs  (harmonic intervals between H and CP)
+    IntVarArray m_intervals;                // M_brut (melodic intervals in CP)           
+    IntVarArray m_intervals_abs;            // M_abs  (absolute value of melodic intervals in CP)
+    IntVarArray p_motions;                  // P      (motions)
+    BoolVarArgs bool_motions_cp_up;
+    BoolVarArgs bool_motions_cp_down;
+    BoolVarArgs bool_motions_cp_static;
     int size; // The size of the variable array of interest
     int lower_bound_domain;
     int upper_bound_domain;

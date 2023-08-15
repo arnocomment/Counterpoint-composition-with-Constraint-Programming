@@ -54,16 +54,13 @@ Problem::Problem (vector<vector<int>> cantus_firmus, int nMeasures) {
     vars = IntVarArray(*this, size, domain);                           // CP (notes of the counterpoint)
     Matrix<IntVarArray> cp(vars, nMeasures, 4);                        // Matrix view of CP (wrapper)
 
-    
 
-    h_intervals_abs_vars = IntVarArray(*this, size, 0, 18);                        // init h_abs (range is tmp)
+    // H intervals            
+    h_intervals_abs_vars = IntVarArray(*this, size, 0, 18);                         // init h_abs (range is tmp)
     Matrix<IntVarArray> h_intervals_abs(h_intervals_abs_vars, nMeasures, 4);        // Matrix view of CP (wrapper)
     for (int i = 0; i < 4; ++i) {                                                   // rows
         for (int j = 0; j < nMeasures; ++j) {                                       // columns
-            cout << cantus_firmus[i][j] << endl;
-            cout << i << ", " << j << endl;
             if (cantus_firmus[i][j] == 0) {
-                cout << "coucou" << endl;
                 rel(*this, cp(j, i), IRT_EQ, cantus_firmus[i][j]);
             }
             else {
@@ -76,6 +73,45 @@ Problem::Problem (vector<vector<int>> cantus_firmus, int nMeasures) {
     for (int i = 0; i < size; ++i) {
         rel(*this, h_intervals_vars[i] == h_intervals_abs_vars[i] % 12);
     }
+
+
+    // M intervals
+    m_intervals = IntVarArray(*this, nMeasures - 1, -12, 12);           // tmp size for species 1
+    m_intervals_abs = IntVarArray(*this, nMeasures - 1, 0, 12);
+    for (int j = 0; j < nMeasures - 1; ++j) {
+        rel(*this, m_intervals[j] == cp(j+1, 0) - cp(j, 0));
+        rel(*this, m_intervals_abs[j] == abs(m_intervals[j]));
+    }
+
+    // P motions
+    p_motions = IntVarArray(*this, nMeasures - 1, 0, 2);
+    for (int i = 0; i < m_intervals.size(); i++) {
+        bool_motions_cp_up << BoolVar(*this, 0, 1);                     // add boolean variable (0 false, 1 true)
+        bool_motions_cp_down << BoolVar(*this, 0, 1);
+        bool_motions_cp_static << BoolVar(*this, 0, 1);
+        rel(*this, m_intervals[i] > 0 == bool_motions_cp_up[i]);        // 1 if M_intervals > 0
+        rel(*this, m_intervals[i] < 0 == bool_motions_cp_down[i]);      // 1 of M_intervals < 0
+        rel(*this, (m_intervals[i] == 0) == bool_motions_cp_static[i]);
+        
+    }
+    vector<int> m_cf(nMeasures - 1);
+    for (int j = 0; j < nMeasures - 1; ++j) {
+        m_cf[j] = cantus_firmus[0][j+1] - cantus_firmus[0][j];
+        rel(*this, p_motions[j], IRT_EQ, OBLIQUE, bool_motions_cp_static[j]);
+        Reify r_up(bool_motions_cp_up[j], RM_IMP);
+        if (m_cf[j] < 0) {
+            rel(*this, p_motions[j], IRT_EQ, CONTRARY, r_up);
+            rel(*this, p_motions[j], IRT_EQ, DIRECT, bool_motions_cp_down[j]);
+        }
+        else if (m_cf[j] > 0) {
+            rel(*this, p_motions[j], IRT_EQ, DIRECT, bool_motions_cp_up[j]);
+            rel(*this, p_motions[j], IRT_EQ, CONTRARY, bool_motions_cp_down[j]);
+        }
+        else {
+            rel(*this, p_motions[j], IRT_EQ, OBLIQUE);
+        }
+    }
+    
 
     /*************************************************************************************************************
     *                                               CONSTRAINTS                                                  *
@@ -100,6 +136,15 @@ Problem::Problem(Problem& s): Space(s){
     upper_bound_domain = s.upper_bound_domain;
     MAX_NOTES_CP = s.MAX_NOTES_CP;
     vars.update(*this, s.vars);
+    h_intervals_abs_vars.update(*this, s.h_intervals_abs_vars);
+    h_intervals_vars.update(*this, s.h_intervals_vars);
+    m_intervals.update(*this, s.m_intervals);
+    m_intervals_abs.update(*this, s.m_intervals_abs);
+    p_motions.update(*this, p_motions);
+    bool_motions_cp_up = s.bool_motions_cp_up;
+    bool_motions_cp_down = s.bool_motions_cp_down;
+    bool_motions_cp_static = s.bool_motions_cp_static;
+
     // ERREUR BIZARRE CHECK ICI
 }
 
@@ -156,6 +201,14 @@ void Problem::print_solution(){
         cout << vars[i].val() << " ";
     }
     cout << endl;
+    //cout << h_intervals_vars << endl;
+    //cout << h_intervals_abs_vars << endl;
+    cout << m_intervals << endl;
+    //cout << m_intervals_abs << endl;
+    cout << p_motions << endl;
+    cout << bool_motions_cp_up << endl;
+    cout << bool_motions_cp_down << endl;
+    cout << bool_motions_cp_static << endl;
 }
 
 /**
