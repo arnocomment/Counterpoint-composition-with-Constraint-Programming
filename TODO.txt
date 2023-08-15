@@ -1,0 +1,13 @@
+TODO (for 1st species to be complete)
+
+- range of CP : thibault fixed to one and a half octave (18 semitones) for performance reasons
+- cost of borrowed notes
+- first species : only one list of notes is needed, 0 values are in the way -> get rid of them?
+
+
+
+
+DONE
+
+- all notes from same key
+- some borrowed notes are allowed

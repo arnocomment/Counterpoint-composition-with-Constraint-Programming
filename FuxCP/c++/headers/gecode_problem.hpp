@@ -33,7 +33,9 @@ using namespace std;
 class Problem: public Space {
 protected:
     // solution related attributes
-    IntVarArray vars;                   // The variables of interest
+    IntVarArray vars;                        // CP    (notes of the counterpoint)
+    IntVarArray h_intervals_vars;            // H     (harmonic intervals between H and CP, modulo 12)
+    IntVarArray h_intervals_abs_vars;        // H_abs (harmonic intervals between H and CP)
     int size; // The size of the variable array of interest
     int lower_bound_domain;
     int upper_bound_domain;
@@ -52,7 +54,7 @@ public:
      * Constructor
      * @param cantus_firmus Contains the MIDI values of the cantus firmus
      */
-    Problem(int** cantus_firmus, int nMeasures);
+    Problem(vector<vector<int>> cantus_firmus, int nMeasures);
 
     /**
      * Copy constructor

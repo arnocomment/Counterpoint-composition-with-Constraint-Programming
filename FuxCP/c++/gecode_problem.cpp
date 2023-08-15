@@ -9,7 +9,7 @@
  * Constructor
  * @param cantus_firmus Contains the MIDI values of the cantus firmus
  */
-Problem::Problem (int** cantus_firmus, int nMeasures) {
+Problem::Problem (vector<vector<int>> cantus_firmus, int nMeasures) {
     string message = "WSpace object created. ";
 
     /*************************************************************************************************************
@@ -33,8 +33,9 @@ Problem::Problem (int** cantus_firmus, int nMeasures) {
     domain_vector.erase(remove_if(domain_vector.begin(), domain_vector.end(), [](int value) {
         return value < 21;                                                  // remove all values below A0 (21)
     }), domain_vector.end());
+    domain_vector.push_back(0);                                             // 0 = no note on this beat
 
-    lower_bound_domain = domain_vector.front();                             // lowest possible note for cp
+    lower_bound_domain = 0;                                                 // lowest possible note  = no note
     upper_bound_domain = domain_vector.back();                              // highest possible note for cp
 
     
@@ -49,15 +50,36 @@ Problem::Problem (int** cantus_firmus, int nMeasures) {
     /*************************************************************************************************************
     *                                          INIT VARIABLES (CP)                                               *
     **************************************************************************************************************/
-    IntSet domain(domain_vector.data(), domain_vector.size());                  // convert vector to IntSet
-    vars = IntVarArray(*this, size, domain);   
-    Matrix<IntVarArray> cp(vars, 11, 4);                                              
+    IntSet domain(domain_vector.data(), domain_vector.size());         // convert vector to IntSet
+    vars = IntVarArray(*this, size, domain);                           // CP (notes of the counterpoint)
+    Matrix<IntVarArray> cp(vars, nMeasures, 4);                        // Matrix view of CP (wrapper)
+
+    
+
+    h_intervals_abs_vars = IntVarArray(*this, size, 0, 18);                        // init h_abs (range is tmp)
+    Matrix<IntVarArray> h_intervals_abs(h_intervals_abs_vars, nMeasures, 4);        // Matrix view of CP (wrapper)
+    for (int i = 0; i < 4; ++i) {                                                   // rows
+        for (int j = 0; j < nMeasures; ++j) {                                       // columns
+            cout << cantus_firmus[i][j] << endl;
+            cout << i << ", " << j << endl;
+            if (cantus_firmus[i][j] == 0) {
+                cout << "coucou" << endl;
+                rel(*this, cp(j, i), IRT_EQ, cantus_firmus[i][j]);
+            }
+            else {
+                rel(*this, vars[i * nMeasures + j], IRT_NQ, 0);
+                rel(*this, h_intervals_abs(j, i) == abs(cp(j, i) - cantus_firmus[i][j]));    // in gecode m(j, i) is for column j and row i
+            }
+        }
+    }
+    h_intervals_vars = IntVarArray(*this, size, 0, 11);
+    for (int i = 0; i < size; ++i) {
+        rel(*this, h_intervals_vars[i] == h_intervals_abs_vars[i] % 12);
+    }
 
     /*************************************************************************************************************
     *                                               CONSTRAINTS                                                  *
     **************************************************************************************************************/
-    //G4 : "The counterpoint must be in the same key as the cantus firmus"
-    distinct(*this, vars); // tmp
     
 
     //branching
